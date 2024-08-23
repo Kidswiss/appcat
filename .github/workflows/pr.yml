@@ -10,7 +10,7 @@ on:
 
 env:
   APP_NAME: appcat
-  COMPONENT_REPO: kidswiss/component-appcat
+  COMPONENT_REPO: vshn/component-appcat
 
 jobs:
   check-labels:
@@ -101,7 +101,7 @@ jobs:
         id: bug
         run: |
           echo "set=true" >> $GITHUB_OUTPUT
-      - name: Check for bug label
+      - name: Check for enhancement label
         if: contains(github.event.pull_request.labels.*.name, 'enhancement')
         id: enhancement
         run: |
@@ -182,10 +182,6 @@ jobs:
           yq e '.parameters.appcat.images.${{ env.APP_NAME }}.tag="${{ steps.tag.outputs.tag }}"' class/defaults.yml | diff -B class/defaults.yml - | patch class/defaults.yml - || true
           make gen-golden-all
 
-          # git add .
-          # git commit -m "Update to tag"
-          # git push
-
       - name: Commit & Push changes
         uses: actions-js/push@master
         with:
@@ -193,3 +189,4 @@ jobs:
           branch: "${{ env.APP_NAME }}/${{ github.event.pull_request.number }}/${{ steps.extract_branch.outputs.branch }}"
           message: "Update tag"
           repository: ${{ env.COMPONENT_REPO }}
+

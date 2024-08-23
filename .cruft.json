@@ -1,0 +1,13 @@
+{
+  "template": "https://github.com/vshn/appcat-cookiecutter",
+  "commit": "c5eb242eaaa434c438eb10f2917c0ad579ccaffc",
+  "checkout": "add/cookiecutter",
+  "context": {
+    "cookiecutter": {
+      "app_name": "appcat",
+      "component_repo": "vshn/component-appcat",
+      "_template": "https://github.com/vshn/appcat-cookiecutter"
+    }
+  },
+  "directory": null
+}
