@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: docker://agilepathway/pull-request-label-checker:v1.6.51
         with:
-          one_of: breaking,enhancement,bug
+          one_of: major,minor,patch,documentation,dependency
           repo_token: ${{ secrets.GITHUB_TOKEN }}
   publish-branch-images:
     if: github.event.action != 'closed'
@@ -96,19 +96,19 @@ jobs:
     if: github.event.pull_request.merged
     runs-on: ubuntu-latest
     steps:
-      - name: Check for bug label
-        if: contains(github.event.pull_request.labels.*.name, 'bug')
-        id: bug
+      - name: Check for patch label
+        if: contains(github.event.pull_request.labels.*.name, 'patch') || contains(github.event.pull_request.labels.*.name, 'dependencies') || contains(github.event.pull_request.labels.*.name, 'documentation')
+        id: patch
         run: |
           echo "set=true" >> $GITHUB_OUTPUT
-      - name: Check for enhancement label
-        if: contains(github.event.pull_request.labels.*.name, 'enhancement')
-        id: enhancement
+      - name: Check for minor label
+        if: contains(github.event.pull_request.labels.*.name, 'minor')
+        id: minor
         run: |
           echo "set=true" >> $GITHUB_OUTPUT
-      - name: Check for breaking label
-        if: contains(github.event.pull_request.labels.*.name, 'breaking')
-        id: breaking
+      - name: Check for major label
+        if: contains(github.event.pull_request.labels.*.name, 'major')
+        id: major
         run: |
           echo "set=true" >> $GITHUB_OUTPUT
 
@@ -135,36 +135,38 @@ jobs:
         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
         id: extract_branch
 
+      # We only run this if any of the release tags is set.
+      # For docs and deps we don't do automagic releases
       - name: Increase Tag
         id: tag
         run: |
-          bug=${{ steps.bug.outputs.set }}
-          enhancement=${{ steps.enhancement.outputs.set }}
-          breaking=${{ steps.breaking.outputs.set }}
+          patch=${{ steps.patch.outputs.set }}
+          minor=${{ steps.minor.outputs.set }}
+          major=${{ steps.major.outputs.set }}
 
-          breaking_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f1)
-          enhancement_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f2)
-          bug_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f3)
+          major_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f1)
+          minor_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f2)
+          patch_ver=$(echo '${{ env.TAG_VERSION }}' | cut -d "." -f3)
 
-          breaking_ver="${breaking_ver:1}"
+          major_ver="${major_ver:1}"
 
-          # Check for bug label
-          [ ! -z "$bug" ] && [ -z "$enhancement" ] && [ -z "$breaking" ] && ((bug_ver++)) || true
+          # Check for patch label
+          [ ! -z "$bug" ] && [ -z "$minor" ] && [ -z "$major" ] && ((patch_ver++)) || true
 
-          # check for enhancement label
-          if [ ! -z "$enhancement" ] && [ -z "$breaking" ]; then
-            ((enhancement_ver++))
-            bug_ver=0
+          # check for minor label
+          if [ ! -z "$minor" ] && [ -z "$major" ]; then
+            ((minor_ver++))
+            patch_ver=0
           fi
 
-          # Check for breaking label
-          if [ ! -z "$breaking" ]; then
-            ((breaking_ver++))
-            enhancement_ver=0
-            bug_ver=0
+          # Check for major label
+          if [ ! -z "$major" ]; then
+            ((major_ver++))
+            minor_ver=0
+            patch_ver=0
           fi
 
-          tag="v$breaking_ver.$enhancement_ver.$bug_ver"
+          tag="v$major_ver.$minor_ver.$patch_ver"
           echo "new tag $tag"
           git tag $tag
           git push --tags

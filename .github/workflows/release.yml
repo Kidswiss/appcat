@@ -69,3 +69,7 @@ jobs:
           args: release --release-notes .github/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+<<<<<<< ours
+=======
+
+>>>>>>> theirs

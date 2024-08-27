@@ -1,9 +1,14 @@
+<<<<<<< ours
+=======
+
+>>>>>>> theirs
 {
   "pr_template": "- ${{TITLE}} (#${{NUMBER}})",
   "categories": [
     {
       "title": "## 🚀 Features",
       "labels": [
+<<<<<<< ours
         "enhancement"
       ]
     },
@@ -11,18 +16,29 @@
       "title": "## 🛠️ Minor Changes",
       "labels": [
         "change"
+=======
+        "minor"
+>>>>>>> theirs
       ]
     },
     {
       "title": "## 🔎 Breaking Changes",
       "labels": [
+<<<<<<< ours
         "breaking"
+=======
+        "major"
+>>>>>>> theirs
       ]
     },
     {
       "title": "## 🐛 Fixes",
       "labels": [
+<<<<<<< ours
         "bug"
+=======
+        "patch"
+>>>>>>> theirs
       ]
     },
     {
@@ -40,3 +56,7 @@
   ],
   "template": "${{CATEGORIZED_COUNT}} changes since ${{FROM_TAG}}\n\n${{CHANGELOG}}"
 }
+<<<<<<< ours
+=======
+
+>>>>>>> theirs
