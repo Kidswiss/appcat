@@ -114,6 +114,9 @@ jobs:
         run: |
           make gen-golden-all
 
+
+
+
       - name: Check if it's a hotfix
         id: hotfix_check
         run: |
