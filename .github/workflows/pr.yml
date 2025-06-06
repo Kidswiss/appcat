@@ -1,6 +1,8 @@
 name: PR Automation
 
 on:
+  issues:
+    types: [labeled, unlabeled]
   pull_request: {}
   pull_request_target:
     types:
@@ -16,12 +18,17 @@ env:
   PUSH_IMAGE: "True"
 
 jobs:
-  check-branch:
+  check-allow-merge:
     runs-on: ubuntu-latest
     steps:
-      - name: Check branch
-        if: (github.base_ref == 'master' && github.head_ref != 'develop') || (github.base_ref == 'master' && ! contains(github.event.pull_request.labels.*.name, 'hotfix') )
+      # Labels in the context don't get updated so they are stuck at what's set during creation
+      # We need this action to get current labels
+      - name: Get current labels
+        uses: snnaplab/get-labels-action@v1
+      - name: Check if merge is allowed
+        if: github.base_ref == 'master' &&  github.head_ref != 'develop'
         run: |
+          ${{ contains(fromJSON(env.LABELS), 'hotfix') }} && exit 0
           echo "ERROR: You can only merge to master from develop or hotfixes."
           exit 1
   check-labels:
@@ -89,6 +96,9 @@ jobs:
   open-or-update-pr-component:
     runs-on: ubuntu-latest
     steps:
+      - name: Get current labels
+        uses: snnaplab/get-labels-action@v1
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -107,17 +117,31 @@ jobs:
 
           git --no-pager diff
 
+      - name: Change component to a hotfix
+        if: contains(fromJSON(env.LABELS), 'hotfix')
+        run: |
+          yq e '.parameters.appcat.deploymentManagementSystem.hotfix = true'
+
+          git --no-pager diff
+
+      - name: Change component to a regular release
+        if: ! contains(fromJSON(env.LABELS), 'hotfix')
+        run: |
+          yq e '.parameters.appcat.deploymentManagementSystem.hotfix = false'
+
+          git --no-pager diff
+
       - name: Generate new golden
         # Act uses the host's docker to run containers, but then
         # they can't access the files that were previously cloned.
-        if: github.event.pull_request.number != 0
+        if: github.event.pull_request.number != 0 && github.event.action == 'opened'
         run: |
           make gen-golden-all
 
       - name: Check if it's a hotfix
         id: hotfix_check
         run: |
-          [ ${{ contains(github.event.pull_request.labels.*.name, 'hotfix') }} ] && echo "base=master" >> $GITHUB_OUTPUT || echo "base=develop" >> $GITHUB_OUTPUT
+          ${{ contains(fromJSON(env.LABELS), 'hotfix') }} && echo "base=master" >> $GITHUB_OUTPUT || echo "base=develop" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
@@ -130,9 +154,11 @@ jobs:
           base: ${{ steps.hotfix_check.outputs.base }}
           draft: false
 
-      - uses: tzkhan/pr-update-action@v2
+      - name: Add link to component PR
+        uses: tzkhan/pr-update-action@v2
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          head-branch-regex: "${{ steps.extract_branch.outputs.branch }}"
           body-template: |
             Component PR: ${{ steps.cpr.outputs.pull-request-url }}
           body-update-action: 'suffix'
