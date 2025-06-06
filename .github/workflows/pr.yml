@@ -1,9 +1,8 @@
 name: PR Automation
 
 on:
-  issues:
+  pull_request:
     types: [labeled, unlabeled]
-  pull_request: {}
   pull_request_target:
     types:
       - closed
